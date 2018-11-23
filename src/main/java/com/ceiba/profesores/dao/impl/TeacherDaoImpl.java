@@ -2,10 +2,16 @@ package com.ceiba.profesores.dao.impl;
 
 import java.util.List;
 
+import javax.transaction.Transactional;
+
+import org.springframework.stereotype.Repository;
+
 import com.ceiba.profesores.dao.AbstractSession;
 import com.ceiba.profesores.dao.TeacherDao;
 import com.ceiba.profesores.model.Teacher;
 
+@Repository
+@Transactional
 public class TeacherDaoImpl extends AbstractSession implements TeacherDao {
 
 	public void saveTeacher(Teacher teacher) {
