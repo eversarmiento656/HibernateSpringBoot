@@ -39,6 +39,7 @@ public class MainController {
 	private static final String CORRECTO_ACTUALIZAR = "Se actualizó correctamente";
 	private static final String TEACHER_NO_ESTA = "El teacher no está en la base de datos";
 	private static final String TEACHER_ESTA = "Ya se encuentra en la base de datos";
+	private static final String IMAGEN_NO_ESTA = "La imagen no se encuentra";
 
 	@GetMapping(value = "/profesores", headers = "Accept=application/json")
 	public ResponseEntity<List<Teacher>> getTeachers() {
@@ -131,8 +132,7 @@ public class MainController {
 			return new ResponseEntity(TEACHER_NO_ESTA, HttpStatus.NOT_FOUND);
 		}
 
-		if (!teacher.getAvatar().isEmpty()
-				|| profesoresService.findTeacherById(id).getAvatar() != null) {
+		if (!teacher.getAvatar().isEmpty() || profesoresService.findTeacherById(id).getAvatar() != null) {
 
 			String fileName = teacher.getAvatar();
 			Path path = Paths.get(fileName);
@@ -150,17 +150,48 @@ public class MainController {
 
 			String fileName = String.valueOf(id) + "- picture -" + dateName + "."
 					+ multiPartFile.getContentType().split("/")[1];
-			
-			teacher.setAvatar(PATH_TEACHERS+fileName);
-			byte[] bytes =  multiPartFile.getBytes();
+
+			teacher.setAvatar(PATH_TEACHERS + fileName);
+			byte[] bytes = multiPartFile.getBytes();
 			Path path = Paths.get(PATH_TEACHERS, fileName);
 			Files.write(path, bytes);
 			profesoresService.updateTeacher(teacher);
 			return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(bytes);
 
 		} catch (Exception e) {
-
 			return new ResponseEntity(e, HttpStatus.NOT_FOUND);
 		}
+	}
+
+	@GetMapping(value = "//profesores/{id_teacher}/imagenes", headers = "content-type=multipart/form-data")
+	public ResponseEntity<byte[]> getImageTeacher(@PathVariable("id_teacher") long id) {
+
+		if (id == 0) {
+			return new ResponseEntity(ERROR_DATOS, HttpStatus.NO_CONTENT);
+		}
+
+		Teacher teacher = profesoresService.findTeacherById(id);
+
+		if (teacher == null) {
+			return new ResponseEntity(TEACHER_NO_ESTA, HttpStatus.NOT_FOUND);
+		}
+
+		try {
+
+			String pathName = teacher.getAvatar();
+			Path path = Paths.get(pathName);
+			File file = path.toFile();
+
+			if (!file.exists()) {
+				return new ResponseEntity(IMAGEN_NO_ESTA, HttpStatus.NO_CONTENT);
+			}
+
+			byte[] image = Files.readAllBytes(path);
+			return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+
+		} catch (Exception e) {
+			return new ResponseEntity(e, HttpStatus.NOT_FOUND);
+		}
+
 	}
 }
