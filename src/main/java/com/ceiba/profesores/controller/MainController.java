@@ -11,6 +11,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -163,7 +164,7 @@ public class MainController {
 		}
 	}
 
-	@GetMapping(value = "//profesores/{id_teacher}/imagenes", headers = "content-type=multipart/form-data")
+	@GetMapping(value = "/profesores/{id_teacher}/imagenes", headers = "content-type=multipart/form-data")
 	public ResponseEntity<byte[]> getImageTeacher(@PathVariable("id_teacher") long id) {
 
 		if (id == 0) {
@@ -193,5 +194,42 @@ public class MainController {
 			return new ResponseEntity(e, HttpStatus.NOT_FOUND);
 		}
 
+	}
+
+	@RequestMapping(value = "/profesores/{id_teacher}/imagenes", method = RequestMethod.DELETE, headers = "content-type=multipart/form-data")
+	public ResponseEntity<String> deleteImageTeacher(@PathVariable("id_teacher") long id) {
+
+		if (id == 0) {
+			return new ResponseEntity<>(ERROR_DATOS, HttpStatus.NO_CONTENT);
+		}
+
+		Teacher teacher = profesoresService.findTeacherById(id);
+
+		if (teacher == null) {
+			return new ResponseEntity<>(TEACHER_NO_ESTA, HttpStatus.NOT_FOUND);
+		}
+
+		if (teacher.getAvatar().isEmpty() || teacher.getAvatar() == null) {
+			return new ResponseEntity<>(IMAGEN_NO_ESTA, HttpStatus.NO_CONTENT);
+		}
+
+		try {
+
+			String pathName = teacher.getAvatar();
+			Path path = Paths.get(pathName);
+			File file = path.toFile();
+
+			if (!file.exists()) {
+				return new ResponseEntity<>(IMAGEN_NO_ESTA, HttpStatus.NO_CONTENT);
+			}
+
+			file.delete();
+			teacher.setAvatar("");
+			profesoresService.updateTeacher(teacher);
+			return new ResponseEntity<>(CORRECTO_ELIMINAR, HttpStatus.OK);
+
+		} catch (Exception e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+		}
 	}
 }
